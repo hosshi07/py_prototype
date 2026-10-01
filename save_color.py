@@ -2,18 +2,17 @@ import cv2
 import numpy as np
 
 def get_dominant_color(roi):
-    """領域内の平均色を計算し、指定された6色を判定する"""
     hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
     h, w = hsv.shape[:2]
     
-    # 枠線の黒や影などのノイズを避けるため、領域の中心付近だけをサンプリング
+    # 中心付近のみの色判定
     center_hsv = hsv[int(h*0.3):int(h*0.7), int(w*0.3):int(w*0.7)]
     mean_hsv = np.mean(center_hsv, axis=(0, 1))
     
     hue, sat, val = mean_hsv[0], mean_hsv[1], mean_hsv[2]
 
     if sat < 60 and val > 120: return "White"
-    if val < 50: return "Empty/Black" # 手の影などで暗い場合
+    if val < 50: return "Empty/Black" # 保険
         
     if hue < 10 or hue > 160: return "Red"
     elif 10 <= hue < 35: return "Yellow"
@@ -23,7 +22,6 @@ def get_dominant_color(roi):
     else: return "Unknown"
 
 def find_cross_box(frame):
-    """画像からバツ印のある四角形を探して座標を返す"""
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     edges = cv2.Canny(blurred, 50, 150)
@@ -41,12 +39,12 @@ def find_cross_box(frame):
             if len(approx) == 4 and cv2.isContourConvex(approx):
                 x, y, w, h = cv2.boundingRect(approx)
                 
-                # 【重要】他の四角形と区別するため、枠の内側の「線の量(エッジ)」を調べる
-                margin = int(w * 0.15) # 枠線自体を含めないように内側を切り抜く
+                #枠の内側の「線の量(エッジ)」を調べる すげー
+                margin = int(w * 0.15)
                 inner_roi = edges[y+margin : y+h-margin, x+margin : x+w-margin]
                 
                 if inner_roi.size > 0:
-                    # 内側に白いピクセル（エッジ）がどれくらいあるか割合を計算
+                    # 内側に白いピクセル（エッジ）がどれくらいあるか割合を計算　
                     edge_density = np.count_nonzero(inner_roi) / inner_roi.size
                     
                     # バツ印があればエッジの密度が高くなる（0.05=5%以上をバツ枠とみなす）
@@ -56,7 +54,7 @@ def find_cross_box(frame):
 
 def main():
     cap = cv2.VideoCapture(0)
-    last_known_box = None  # 最後に確認したバツ枠の座標
+    last_known_box = None  # 初期化
     
     while True:
         ret, frame = cap.read()
@@ -67,7 +65,7 @@ def main():
         current_box = find_cross_box(frame)
         
         if current_box is not None:
-            # バツ枠が見えている間は、常に最新の座標に更新（記憶）し続ける
+            # ここで常に最新の四角の座標を保存し続ける
             last_known_box = current_box
             x, y, w, h = current_box
             
@@ -76,12 +74,11 @@ def main():
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             
         else:
-            # バツ枠が見つからない ＝ 手で隠された or さいころが置かれた状態
+            #バツ枠が隠れたなら最後に保存したやつを使う．
             if last_known_box is not None:
-                # 最後に記憶した座標をロックして色判定を行う
                 x, y, w, h = last_known_box
                 
-                cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2) # ロック中は赤枠
+                cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
                 
                 roi = frame[y:y+h, x:x+w]
                 if roi.size > 0:
