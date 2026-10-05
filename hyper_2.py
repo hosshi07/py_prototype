@@ -122,23 +122,14 @@ def main():
                     print(f"Calibration Failed: Found {len(color_boxes)} color boxes.")
         
         else:
-            # 実行フェーズ
             if cross_box is not None:
-                last_known_cross = cross_box
                 cx, cy, cw, ch = cross_box
-                cv2.rectangle(frame, (cx, cy), (cx+cw, cy+ch), (0, 255, 0), 2)
-                cv2.putText(frame, "Waiting for Dice...", (cx, cy - 10), 
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-            else:
-                if last_known_cross is not None:
-                    cx, cy, cw, ch = last_known_cross
-                    cv2.rectangle(frame, (cx, cy), (cx+cw, cy+ch), (0, 0, 255), 2)
-                    
-                    roi = frame[cy:cy+ch, cx:cx+cw]
-                    if roi.size > 0:
-                        color_name = get_closest_color_name(roi, reference_colors)
-                        cv2.putText(frame, f"Color: {color_name}", (cx, cy - 10), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+                cv2.rectangle(frame, (cx-10, cy-10), (cx+cw+10, cy+ch+10), (0, 0, 255), 2)
+                roi = frame[cy:cy+ch, cx:cx+cw]
+                if roi.size > 0:
+                    color_name = get_closest_color_name(roi, reference_colors)
+                    cv2.putText(frame, f"Color: {color_name}", (cx, cy - 10), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
                 
         cv2.imshow("Field Camera", frame)
         
