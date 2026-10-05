@@ -85,7 +85,9 @@ def sort_color_boxes(color_boxes):
     return sorted(color_boxes, key=lambda b: b[0])
 
 def main():
-    cap = cv2.VideoCapture(0)
+    
+    cap = int(input())
+    cap = cv2.VideoCapture(2)
     
     last_known_cross = None
     reference_colors = []
@@ -95,10 +97,10 @@ def main():
         ret, frame = cap.read()
         if not ret: break
         
-        # 毎フレーム、バツ枠とカラー枠を探す
-        cross_box, color_boxes = detect_field_elements(frame)
         
         if not is_calibrated:
+            # 毎フレーム、バツ枠とカラー枠を探す
+            cross_box, color_boxes = detect_field_elements(frame)
             cv2.putText(frame, "Press 'c' to Calibrate Colors", (10, 30), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
             
