@@ -86,8 +86,8 @@ def sort_color_boxes(color_boxes):
 
 def main():
     
-    cap = int(input())
-    cap = cv2.VideoCapture(2)
+    number = int(input("カメラID："))
+    cap = cv2.VideoCapture(number)
     
     last_known_cross = None
     reference_colors = []
